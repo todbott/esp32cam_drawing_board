@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head></head>
+  <body>
+    <img src="data:image/jpeg;base64,{b}" id="feed">
+    <!-- <script>
+      var ajaxRequest = new XMLHttpRequest();
+      function ajaxLoad() {
+        ajaxRequest.open("GET", "update", true);
+        ajaxRequest.onload = function () {
+          ajaxRequest.onreadystatechange = function () {
+            if (ajaxRequest.readyState == 4) {
+              if (ajaxRequest.status == 200) {
+                var ajaxResult = ajaxRequest.responseText;
+                document.getElementById("feed").src = "data:image/jpeg;base64, " + ajaxResult
+              }
+            }
+          };
+        };
+        ajaxRequest.send();
+      }
+      function updateDHT() {
+        ajaxLoad();
+      }
+      updateInterval = setInterval(updateDHT, 30000);
+    </script> -->
+  </body>
+</html>

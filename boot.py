@@ -4,6 +4,7 @@ import time
 import network
 import uos
 import machine
+import urequests_two as urequests
 
 
 import socket
@@ -15,6 +16,12 @@ class CameraController:
 
         # Here is the LAN thing
         self.sta = network.WLAN(network.STA_IF)
+
+        # And the flash for the camera
+        self.led = machine.Pin(4, machine.Pin.OUT)
+
+        # And the image counter for saving images
+        self.imageCounter = 0
 
         # And here's the socket
         self.s = None
@@ -45,7 +52,7 @@ class CameraController:
         camera.mirror(1)
 
         # framesize
-        camera.framesize(camera.FRAME_VGA)
+        camera.framesize(camera.FRAME_SVGA)
         # The options are the following:
         # FRAME_96X96 FRAME_QQVGA FRAME_QCIF FRAME_HQVGA FRAME_240X240
         # FRAME_QVGA FRAME_CIF FRAME_HVGA FRAME_VGA FRAME_SVGA
@@ -60,12 +67,12 @@ class CameraController:
         # EFFECT_NONE (default) EFFECT_NEG EFFECT_BW EFFECT_RED EFFECT_GREEN EFFECT_BLUE EFFECT_RETRO
 
         # white balance
-        camera.whitebalance(camera.WB_NONE)
+        camera.whitebalance(camera.WB_HOME)
         # The options are the following:
         # WB_NONE (default) WB_SUNNY WB_CLOUDY WB_OFFICE WB_HOME
 
         # saturation
-        camera.saturation(0)
+        camera.saturation(2)
         # -2,2 (default 0). -2 grayscale 
 
         # brightness
@@ -84,32 +91,48 @@ class CameraController:
         uos.mount(machine.SDCard(), "/sd")
 
 
-        while True:
+        for x in range(0, 3):
 
-            conn, addr = self.s.accept()
+            # conn, addr = self.s.accept()
 
-            request=conn.recv(1024)
+            # request=conn.recv(1024)
             
-            # Socket send()
-            request = str(request)
-            update = request.find('/update')
-            print(request)
+            # # Socket send()
+            # request = str(request)
+            # update = request.find('/update')
+            # print(request)
 
-            if update > -1:
-                response = f" {str(binascii.b2a_base64(camera.capture()))[2:-3]}"
-            else:
-                response = open("cam.html", "r").read().replace(" {", "{{").replace(" }", "}}").format(b = f" {str(binascii.b2a_base64(camera.capture()))[2:-3]}")
+            # if update > -1:
+            #     response = f" {str(binascii.b2a_base64(camera.capture()))[2:-3]}"
+            # else:
+            #     response = open("cam.html", "r").read().replace(" {", "{{").replace(" }", "}}").format(b = f" {str(binascii.b2a_base64(camera.capture()))[2:-3]}")
 
-            # Create a socket reply, and actually send the response
-            conn.send('HTTP/1.1 200 OK\n')
-            conn.send('Content-Type: text/html\n')
-            conn.send('Connection: close\n\n')      
+            # # Create a socket reply, and actually send the response
+            # conn.send('HTTP/1.1 200 OK\n')
+            # conn.send('Content-Type: text/html\n')
+            # conn.send('Connection: close\n\n')   
+            url = "https://us-central1-hotaru-kanri.cloudfunctions.net/room-stats"
+            data = {'light': str(binascii.b2a_base64(camera.capture()))[2:-3]}
+            headers = {}
+            headers['Content-Type'] = 'application/json'
+
+            r = urequests.post(url, json=data, headers=headers)
+            print(r.status_code)
+            r.close()   
             
           
-            conn.sendall(response)
+            # conn.sendall(response)
+
+            self.led.on()
+            with open(f"/sd/{self.imageCounter}_.jpeg", "wb") as im:
+                im.write(camera.capture())
+            self.led.off()
+            self.imageCounter += 1
+
+            time.sleep(5)
         
             # Socket close()
-            conn.close()
+            # conn.close()
 
 
 
